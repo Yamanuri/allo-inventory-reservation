@@ -51,7 +51,7 @@ Holds shouldn't lock inventory forever. I built a three-tier cleanup system:
 
 1. **Lazy Cleanup on Read**: Before pulling product lists (`GET /api/products`) or displaying the checkout page (`GET /api/reservations/:id`), the API runs a cleanup check to release any expired holds. Lazy cleanup guarantees correctness even if the cron job is delayed or temporarily unavailable.
 2. **Confirm Guard**: When confirming a payment (`POST /api/reservations/:id/confirm`), we check if the hold has expired. If it has, we reject the request with a `410 Gone` and release the stock.
-3. **Cron Job (Vercel)**: `vercel.json` calls `/api/reservations/cleanup` once a day (configured to align with Vercel Hobby plan daily cron restrictions) for automated background release in production.
+3. **Cron Job (Vercel)**: `vercel.json` triggers `/api/reservations/cleanup`. The demo deployment runs cleanup once a day due to Vercel Hobby plan cron limitations. In a production environment, this would typically run every few minutes.
 
 ---
 
