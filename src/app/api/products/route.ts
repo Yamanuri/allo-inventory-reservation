@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { cleanupExpiredReservations } from '@/lib/db-utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // 1. Lazy cleanup of expired reservations to ensure stock numbers are accurate
