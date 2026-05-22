@@ -15,7 +15,12 @@ If we only decrement stock *after* payment succeeds, two concurrent checkouts fo
 If we decrement stock as soon as they add to cart, conversion drops because carts are abandoned.
 
 ### The Solution: Row-Level Atomic Updates
-To make the reservation step race-condition-free, I implemented a conditional atomic update on the `Stock` table within a Prisma transaction:
+To make the reservation step race-condition-free, I implemented a conditional atomic update on the `Stock` table within a Prisma transaction. Instead of using `SELECT FOR UPDATE` to read stock and update later, I used a single conditional atomic update to avoid a read-modify-write race window and reduce transaction complexity.
+
+```text
+Architecture Flow:
+Client ──> Reservation API ──> Prisma Transaction ──> Atomic Stock Update ──> Create Reservation ──> Commit
+```
 
 ```sql
 UPDATE "Stock"
@@ -26,10 +31,17 @@ WHERE "productId" = $productId
 ```
 
 Because Postgres locks the updated row for the duration of the transaction:
-1. Two simultaneous checkouts will execute sequentially.
+1. Concurrent updates are serialized by Postgres row-level locking.
 2. The first checkout updates the row and reserves the unit.
 3. When the second checkout runs, the condition `(totalUnits - reservedUnits) >= quantity` evaluates to `false`. The update modifies `0` rows.
 4. The API checks the affected row count. If it's `0`, we abort the transaction and return a `409 Conflict`.
+
+```text
+Example Failure Scenario:
+Initial Stock = 1
+User A reserves → succeeds (201 Created)
+User B reserves simultaneously → receives 409 Conflict (INSUFFICIENT_STOCK)
+```
 
 ---
 
@@ -37,9 +49,9 @@ Because Postgres locks the updated row for the duration of the transaction:
 
 Holds shouldn't lock inventory forever. I built a three-tier cleanup system:
 
-1. **Lazy Cleanup on Read**: Before pulling product lists (`GET /api/products`) or displaying the checkout page (`GET /api/reservations/:id`), the API runs a cleanup check to release any expired holds.
+1. **Lazy Cleanup on Read**: Before pulling product lists (`GET /api/products`) or displaying the checkout page (`GET /api/reservations/:id`), the API runs a cleanup check to release any expired holds. Lazy cleanup guarantees correctness even if the cron job is delayed or temporarily unavailable.
 2. **Confirm Guard**: When confirming a payment (`POST /api/reservations/:id/confirm`), we check if the hold has expired. If it has, we reject the request with a `410 Gone` and release the stock.
-3. **Cron Job (Vercel)**: `vercel.json` calls `/api/reservations/cleanup` every 5 minutes for automated asynchronous release in production.
+3. **Cron Job (Vercel)**: `vercel.json` calls `/api/reservations/cleanup` once a day (configured to align with Vercel Hobby plan daily cron restrictions) for automated background release in production.
 
 ---
 
