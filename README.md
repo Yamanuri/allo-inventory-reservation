@@ -1,5 +1,7 @@
 # Allo Inventory & Reservation System
 
+🚀 **Live Deployment URL:** [https://allo-inventory-reservation-9ruu.vercel.app/](https://allo-inventory-reservation-9ruu.vercel.app/)
+
 Hey! Thanks for taking the time to review my submission.
 
 This is a Next.js (App Router) take-home project implementing temporary stock reservations to solve checkout race conditions. When a customer proceeds to checkout, we temporarily hold their items for **10 minutes**. If they complete payment, the stock is permanently decremented. If they cancel or let the timer run out, the hold is released back into the pool.
