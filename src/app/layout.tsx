@@ -59,7 +59,7 @@ export default function RootLayout({
         {/* Global Premium Footer */}
         <footer className="border-t border-slate-900/60 bg-slate-950/20 py-8">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <p>© 2026 Allo Health Inc. All rights reserved.</p>
+            <p>© 2026 Allo Health Inc. All rights reserved. | Submitted by: <a href="https://github.com/Yamanuri/allo-inventory-reservation" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 font-bold transition">Yamanuri Shrishail Nad</a></p>
             <div className="flex gap-4">
               <span className="hover:text-slate-400 transition cursor-default">Privacy Policy</span>
               <span className="hover:text-slate-400 transition cursor-default">Terms of Service</span>
